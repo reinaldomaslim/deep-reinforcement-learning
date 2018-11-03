@@ -34,6 +34,7 @@ class Agent():
         self.seed = random.seed(seed)
 
         # Q-Network
+        #create two duplicate networks, just different weights
         self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
         self.qnetwork_target = QNetwork(state_size, action_size, seed).to(device)
         self.optimizer = optim.Adam(self.qnetwork_local.parameters(), lr=LR)
@@ -67,10 +68,13 @@ class Agent():
         self.qnetwork_local.eval()
         with torch.no_grad():
             action_values = self.qnetwork_local(state)
+            
+        #why?
         self.qnetwork_local.train()
 
         # Epsilon-greedy action selection
         if random.random() > eps:
+            #choose the max of these action values
             return np.argmax(action_values.cpu().data.numpy())
         else:
             return random.choice(np.arange(self.action_size))
@@ -87,6 +91,22 @@ class Agent():
 
         ## TODO: compute and minimize the loss
         "*** YOUR CODE HERE ***"
+        #find the next q target using target network, max action's qvalue
+        Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
+        # Compute Q targets for current states
+        # if done, only rewards if returned
+        Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
+        
+        #get expected Q values from local model
+        Q_expected = self.qnetwork_local(states).gather(1, actions)
+        
+        #compute loss
+        loss = F.mse_loss(Q_expected, Q_targets)
+        
+        #minimize this loss
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
         # ------------------- update target network ------------------- #
         self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)                     
@@ -101,6 +121,7 @@ class Agent():
             target_model (PyTorch model): weights will be copied to
             tau (float): interpolation parameter 
         """
+        #instead of doing hard update equating, use soft to be less bias
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
             target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 

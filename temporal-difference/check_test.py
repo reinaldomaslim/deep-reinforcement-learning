@@ -2,6 +2,8 @@ import unittest
 from IPython.display import Markdown, display
 import numpy as np
 
+
+
 def printmd(string):
     display(Markdown(string))
 
@@ -36,8 +38,7 @@ class Tests(unittest.TestCase):
     def td_control_check(self, policy):
         to_check = get_optimal_path(policy)
         np.testing.assert_equal(pol_opt, to_check)
-
-check = Tests()
+        
 
 def run_check(check_name, func):
     try:
@@ -46,3 +47,9 @@ def run_check(check_name, func):
         printmd('**<span style="color: red;">PLEASE TRY AGAIN</span>**')
         return
     printmd('**<span style="color: green;">PASSED</span>**')
+
+
+
+if __name__ == "__main__":
+    check = Tests()
+
